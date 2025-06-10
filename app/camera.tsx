@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function CameraAlternative() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -76,10 +77,21 @@ export default function CameraAlternative() {
           base64: true,
         });
 
-    if (!result.canceled && result.assets[0].base64) {
+    if (!result.canceled && result.assets[0].uri) {
       setImageUri(result.assets[0].uri);
-      uploadImage(result.assets[0].base64);
+      // Kompres gambar sebelum upload
+      const compressedImage = await compressAndResizeImage(result.assets[0].uri);
+      uploadImage(compressedImage.base64);
     }
+  };
+
+  const compressAndResizeImage = async (uri: string) => {
+    // Kompres dan resize gambar ke 224x224
+    return await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 224, height: 224 } }],
+      { compress: 1, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
   };
 
   const uploadImage = async (base64Image: string) => {
@@ -300,14 +312,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-
   treatmentTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#2e7d32", // warna hijau gelap
     marginBottom: 8,
   },
-
   treatmentText: {
     fontSize: 16,
     color: "#333",
